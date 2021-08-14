@@ -1,0 +1,24 @@
+# .editorconfig docs https://aka.ms/editorconfigdocs
+
+# All files
+[*]
+charset = utf-8
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+tab_width = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C++ files
+[*.{c,cc,cpp,h,hh,hpp,inl}]
+indent_size = 4
+cpp_indent_lambda_braces_when_parameter = false
+
+# Makefile
+[{Makefile,*.{mk}}]
+indent_style = tab
+
+# Xml files
+[*.xml]
+indent_size = 2

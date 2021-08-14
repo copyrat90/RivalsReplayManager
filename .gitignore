@@ -1,0 +1,7 @@
+
+# Editor
+.vs/
+
+# Build output
+build/
+out/
