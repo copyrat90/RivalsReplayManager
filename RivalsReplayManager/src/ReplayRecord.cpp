@@ -9,7 +9,13 @@
 
 namespace rrm
 {
-    ReplayVersion::ReplayVersion(uint8_t major, uint8_t minor, uint8_t patch, uint8_t rev)
+    ReplayRecord::ReplayRecord(const SerializedString& serializedString)
+    {
+        // TODO: Initialize members
+
+    }
+
+    ReplayRecord::Version::Version(uint8_t major, uint8_t minor, uint8_t patch, uint8_t rev)
         : versionNums_{ major,minor,patch,rev }
     {
         if (major >= 10)
@@ -22,76 +28,183 @@ namespace rrm
             throw std::invalid_argument(std::format("Invalid rev(idx 3) version: {}", rev));
     }
 
-    uint8_t& ReplayVersion::operator[](int idx)
+    uint8_t& ReplayRecord::Version::operator[](int idx)
     {
         if (idx < 0 || idx >= DIGITS)
             throw std::out_of_range(std::format("Invalid version index: {}", idx));
         return versionNums_[idx];
     }
 
-    std::string ReplayVersion::ToString() const
+    std::string ReplayRecord::Version::ToString() const
     {
         return std::format("{}.{}.{}.{}", versionNums_[0], versionNums_[1], versionNums_[2], versionNums_[3]);
     }
 
-    ReplayRecordElementSerializedString ReplayVersion::Serialize() const
+    ReplayRecord::ElementSerializedString ReplayRecord::Version::Serialize() const
     {
-        return std::format("{}{}{:0>2}{:0>2}", versionNums_[0], versionNums_[1], versionNums_[2], versionNums_[3]);
+        return ElementSerializedString(std::format("{}{}{:0>2}{:0>2}", versionNums_[0], versionNums_[1], versionNums_[2], versionNums_[3]));
     }
 
-    ReplayDateTime::ReplayDateTime(int year, int month, int day, int hour, int minute, int second)
+    ReplayRecord::DateTime::DateTime(int year, int month, int day, int hour, int minute, int second)
         : year_(year), month_(month), day_(day), hour_(hour), minute_(minute), second_(second)
     {
 
     }
 
-    std::string ReplayDateTime::ToString() const
+    std::string ReplayRecord::DateTime::ToString() const
     {
         return std::format("{}-{}-{} {}:{}:{}", year_, month_, day_, hour_, minute_, second_);
     }
 
-    ReplayRecordElementSerializedString ReplayDateTime::Serialize() const
+    ReplayRecord::ElementSerializedString ReplayRecord::DateTime::Serialize() const
     {
-        return std::format("{:0>2}{:0>2}{:0>2}{:0>2}{:0>2}{:0>4}", hour_, minute_, second_, day_, month_, year_);
+        return ElementSerializedString(std::format("{:0>2}{:0>2}{:0>2}{:0>2}{:0>2}{:0>4}", hour_, minute_, second_, day_, month_, year_));
     }
 
-    ReplayRecordElementSerializedString::ReplayRecordElementSerializedString(const std::string& str)
+    ReplayRecord::ElementSerializedString::ElementSerializedString(const std::string& str)
         : str_(str)
     {
 
     }
 
-    std::string ReplayRecordElementSerializedString::ToString() const
+    ReplayRecord::ElementSerializedString::ElementSerializedString(std::string&& str)
+        : str_(std::move(str))
+    {
+    }
+
+    std::string ReplayRecord::ElementSerializedString::ToString() const
     {
         return str_;
     }
 
-    ReplayName::ReplayName(const std::string& name)
+    ReplayRecord::Name::Name(const std::string& name)
     {
         Set(name);
     }
 
-    void ReplayName::Set(const std::string& name)
+    void ReplayRecord::Name::Set(const std::string& name)
     {
         std::string tempName = name;
         utf8help::RTrim(tempName);
+        tempName = utf8help::Upper(tempName);
 
-        // to upper (NOT UTF8)
-        // std::transform(tempName.begin(), tempName.end(), tempName.begin(), std::toupper);
-
-        len_ = static_cast<int>(utf8::distance(name.cbegin(), name.cend()));
-        if (len_ > MAX_LEN)
-            throw std::length_error(std::format("Replay name too long: {} (Max {})", len_, MAX_LEN));
-        name_ = name;
+        const int len = static_cast<int>(utf8::distance(tempName.cbegin(), tempName.cend()));
+        if (len > MAX_LEN)
+            throw std::length_error(std::format("Replay name too long: {} (Max {})", len, MAX_LEN));
+        name_ = tempName;
+        len_ = len;
     }
 
-    std::string ReplayName::ToString() const
+    std::string ReplayRecord::Name::ToString() const
     {
         return name_;
     }
 
-    ReplayRecordElementSerializedString ReplayName::Serialize() const
+    ReplayRecord::ElementSerializedString ReplayRecord::Name::Serialize() const
     {
-        return std::string();
+        const std::string spaceSuffix(MAX_LEN - len_, ' ');
+        return ElementSerializedString(name_ + spaceSuffix);
+    }
+
+    ReplayRecord::Description::Description(const std::string& description)
+    {
+        Set(description);
+    }
+
+    void ReplayRecord::Description::Set(const std::string& description)
+    {
+        std::string tempDesc = description;
+        utf8help::RTrim(tempDesc);
+        tempDesc = utf8help::Upper(tempDesc);
+
+        const int len = static_cast<int>(utf8::distance(tempDesc.cbegin(), tempDesc.cend()));
+        if (len > MAX_LEN)
+            throw std::length_error(std::format("Replay name too long: {} (Max {})", len, MAX_LEN));
+        description_ = tempDesc;
+        len_ = len;
+    }
+
+    std::string ReplayRecord::Description::ToString() const
+    {
+        return description_;
+    }
+
+    ReplayRecord::ElementSerializedString ReplayRecord::Description::Serialize() const
+    {
+        const std::string spaceSuffix(MAX_LEN - len_, ' ');
+        return ElementSerializedString(description_ + spaceSuffix);
+    }
+
+    ReplayRecord::SerializedString::SerializedString(const std::string& str)
+        : str_(str)
+    {
+
+    }
+
+    ReplayRecord::SerializedString::SerializedString(std::string&& str)
+        : str_(std::move(str))
+    {
+    }
+
+    std::string ReplayRecord::SerializedString::ToString() const
+    {
+        return str_;
+    }
+
+    ReplayRecord::GameLength::GameLength(int frames)
+    {
+        if (frames < MIN_LEN)
+            throw std::invalid_argument(std::format("GameLength can't be negative: {}", frames));
+        if (frames > MAX_LEN)
+            throw std::invalid_argument(std::format("GameLength can't be bigger than {}: {}", MAX_LEN, frames));
+        frames_ = frames;
+    }
+
+    int ReplayRecord::GameLength::GetFrames() const
+    {
+        return frames_;
+    }
+
+    std::string ReplayRecord::GameLength::ToString() const
+    {
+        int seconds = frames_ / 60;
+        const int minutes = seconds / 60;
+        seconds %= 60;
+        return std::format("{}:{:0>2}", minutes, seconds);
+    }
+
+    ReplayRecord::ElementSerializedString ReplayRecord::GameLength::Serialize() const
+    {
+        return ElementSerializedString(std::format("{:0>6}", frames_));
+    }
+
+    std::string ReplayRecord::MatchType::ToString() const
+    {
+        if (isTeamMatch_ && type_ == Type::LOCAL)
+            return "Local Team";
+        switch (type_)
+        {
+        case Type::LOCAL:
+            return "Local";
+        case Type::ONLINE_CASUAL:
+            return "Online Casual";
+        case Type::FRIENDLY:
+            return "Friendly";
+        case Type::RANKED:
+            return "Ranked";
+        default:
+            throw std::out_of_range(std::format("Match Type out of range of [0, 4]: {}", static_cast<int>(type_)));
+        }
+        return "";
+    }
+
+    ReplayRecord::ElementSerializedString ReplayRecord::MatchType::SerializeType() const
+    {
+        return ElementSerializedString(std::to_string(static_cast<int>(type_)));
+    }
+
+    ReplayRecord::ElementSerializedString ReplayRecord::MatchType::SerializeIsTeamMatch() const
+    {
+        return ElementSerializedString(isTeamMatch_ ? "1" : "0");
     }
 }
