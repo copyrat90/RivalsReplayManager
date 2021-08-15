@@ -1,7 +1,6 @@
 #include "utf8help.hpp"
 
 #include <array>
-#include <utf8.h>
 
 namespace utf8help
 {
@@ -11,9 +10,27 @@ namespace utf8help
         constexpr std::array<char32_t, 26> LOWER_LETTERS = { 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z' };
     }
 
-    void RTrim(std::string& str)
+    std::string RTrimSpace(const std::string& str)
     {
-        str.erase(std::find_if(str.rbegin(), str.rend(), [](char ch) {return !std::isspace(ch); }).base(), str.end());
+        utf8::iterator it(str.cend(), str.cbegin(), str.cend());
+        const utf8::iterator beginIt(str.cbegin(), str.cbegin(), str.cend());
+        --it;
+        while (true)
+        {
+            auto ch = (char32_t)*it;
+            if (ch == ' ')
+            {
+                if (it == beginIt)
+                    break;
+                --it;
+            }
+            else
+            {
+                ++it;
+                break;
+            }
+        }
+        return std::string(beginIt.base(), it.base());
     }
 
     std::string Transform(const std::string& str, std::function<char32_t(char32_t)> func)
@@ -41,5 +58,37 @@ namespace utf8help
             }
             return ch;
         });
+    }
+
+    std::string ReadString(utf8::iterator<std::string::const_iterator>& it, int count)
+    {
+        std::string result;
+        while (count--)
+            utf8::append((char32_t)*it++, result);
+        return result;
+    }
+
+    int64_t ReadNum(utf8::iterator<std::string::const_iterator>& it, int digits)
+    {
+        return std::stoll(ReadString(it, digits));
+    }
+
+    void AdvanceToNextLine(utf8::iterator<std::string::const_iterator>& it)
+    {
+        while (((char32_t)*it++) != '\n');
+    }
+
+    std::string ReadUntil(utf8::iterator<std::string::const_iterator>& it, char32_t endChar)
+    {
+        std::string result;
+        while (true)
+        {
+            char32_t ch = *it;
+            if (ch == endChar)
+                return result;
+            utf8::append(ch, result);
+            ++it;
+        }
+        return result;
     }
 }
