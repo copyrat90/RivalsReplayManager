@@ -26,7 +26,8 @@ This project relies on these libraries:
     - License: [BSL-1.0](https://github.com/cnjinhao/nana/blob/master/LICENSE)
 + [**UTF8-CPP**](https://github.com/nemtrif/utfcpp) : UTF-8 with C++ in a Portable Way
     - License: [BSL-1.0](https://github.com/nemtrif/utfcpp/blob/master/LICENSE)
-
++ [**fmt**](https://github.com/fmtlib/fmt) : A modern formatting library
+    - License: [MIT](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst)
 
 ## License
 

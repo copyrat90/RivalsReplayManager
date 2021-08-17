@@ -1,7 +1,7 @@
 #include "ReplayRecord.hpp"
 
 #include <stdexcept>
-#include <format>
+#include <fmt/core.h>
 #include <utf8help/utf8help.hpp>
 
 namespace rrm
@@ -128,7 +128,7 @@ namespace rrm
             if (player.rival >= Player::Rival::RIVAL_TOTAL_COUNT)
             {
                 if (!CheckWorkshopLine(it))
-                    throw std::invalid_argument(std::format("Player {} has a workshop rival id of {}, but doesn't have a corresponding steam workshop line.", players_.size(), (int)player.rival));
+                    throw std::invalid_argument(fmt::format("Player {} has a workshop rival id of {}, but doesn't have a corresponding steam workshop line.", players_.size(), (int)player.rival));
 
                 player.workshopRival = ReadWorkshopLine(it);
             }
@@ -136,7 +136,7 @@ namespace rrm
             if (player.buddy >= Player::Buddy::BUDDY_TOTAL_COUNT)
             {
                 if (!CheckWorkshopLine(it))
-                    throw std::invalid_argument(std::format("Player {} has a workshop buddy id of {}, but doesn't have a corresponding steam workshop line.", players_.size(), (int)player.buddy));
+                    throw std::invalid_argument(fmt::format("Player {} has a workshop buddy id of {}, but doesn't have a corresponding steam workshop line.", players_.size(), (int)player.buddy));
 
                 player.workshopBuddy = ReadWorkshopLine(it);
             }
@@ -144,7 +144,7 @@ namespace rrm
             if (player.useWorkshopSkin)
             {
                 if (!CheckWorkshopLine(it))
-                    throw std::invalid_argument(std::format("Player {} uses a workshop skin, but doesn't have a corresponding steam workshop line.", players_.size()));
+                    throw std::invalid_argument(fmt::format("Player {} uses a workshop skin, but doesn't have a corresponding steam workshop line.", players_.size()));
 
                 player.workshopSkin = ReadWorkshopLine(it);
             }
@@ -167,23 +167,23 @@ namespace rrm
 
         // Line 1
         result += std::to_string(starred_);
-        result += std::format("{}{}{:0>2}{:0>2}", version_.digits[0], version_.digits[1], version_.digits[2], version_.digits[3]);
-        result += std::format("{:0>2}{:0>2}{:0>2}{:0>2}{:0>2}{:0>4}", dateTime_.hour, dateTime_.minute, dateTime_.second, dateTime_.day, dateTime_.month, dateTime_.year);
+        result += fmt::format("{}{}{:0>2}{:0>2}", version_.digits[0], version_.digits[1], version_.digits[2], version_.digits[3]);
+        result += fmt::format("{:0>2}{:0>2}{:0>2}{:0>2}{:0>2}{:0>4}", dateTime_.hour, dateTime_.minute, dateTime_.second, dateTime_.day, dateTime_.month, dateTime_.year);
         result += name_;
         result += std::string(32 - utf8::distance(name_.begin(), name_.end()), ' ');
         result += description_;
         result += std::string(140 - utf8::distance(description_.begin(), description_.end()), ' ');
         result += unknown_3_digits_;
-        result += std::format("{:0>6}", gameLengthInFrames_);
+        result += fmt::format("{:0>6}", gameLengthInFrames_);
         result += std::to_string((int)matchType_);
         result += unknown_10_digits_;
         result += "\r\n";
 
         // Line 2
         result += std::to_string(aether_);
-        result += std::format("{:0>2}", (int)stage_);
-        result += std::format("{:0>2}", stocks_);
-        result += std::format("{:0>2}", timer_);
+        result += fmt::format("{:0>2}", (int)stage_);
+        result += fmt::format("{:0>2}", stocks_);
+        result += fmt::format("{:0>2}", timer_);
         result += std::to_string(knockbackScale_);
         result += std::to_string(team_);
         result += std::to_string(teamAttack_);
@@ -191,13 +191,13 @@ namespace rrm
         result += std::to_string(turbo_);
         result += std::to_string(devMode_);
         result += std::to_string((int)abyss_);
-        result += std::format("{:0>4}", abyssEndlessNums_);
+        result += fmt::format("{:0>4}", abyssEndlessNums_);
         result += unknown_9_digits_;
         result += "\r\n";
 
         // Line
         if (workshopStage_)
-            result += std::format("1{}${: >3}{: >3}\r\n", workshopStage_->steamId, workshopStage_->versionDigits[0], workshopStage_->versionDigits[1]);
+            result += fmt::format("1{}${: >3}{: >3}\r\n", workshopStage_->steamId, workshopStage_->versionDigits[0], workshopStage_->versionDigits[1]);
 
         // Lines
         for (const auto& player : players_)
@@ -209,30 +209,30 @@ namespace rrm
             result += player.tag;
             result += std::string(6 - utf8::distance(player.tag.begin(), player.tag.end()), ' ');
             result += player.unknown_1_digit;
-            result += std::format("{:0>2}", (int)player.rival);
-            result += std::format("{:0>2}{:0>2}", player.colorId, player.customColorId);
+            result += fmt::format("{:0>2}", (int)player.rival);
+            result += fmt::format("{:0>2}{:0>2}", player.colorId, player.customColorId);
             result += std::to_string(player.redTeam);
             result += player.unknown_7_digits;
             result += player.colorCode;
             result += std::string(50 - utf8::distance(player.colorCode.begin(), player.colorCode.end()), ' ');
             result += player.unknown_2_digits;
-            result += std::format("{:0>2}", (int)player.buddy);
+            result += fmt::format("{:0>2}", (int)player.buddy);
             result += std::to_string(player.useWorkshopSkin);
             result += player.abyssRunes.to_string();
             result += player.unknown_1_digit_2;
-            result += std::format("{: >2}", player.score);
+            result += fmt::format("{: >2}", player.score);
             result += player.unknown_8_digits;
             result += "\r\n";
 
             // Line
             if (player.workshopRival)
-                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopRival->steamId, player.workshopRival->versionDigits[0], player.workshopRival->versionDigits[1]);
+                result += fmt::format("1{}${: >3}{: >3}\r\n", player.workshopRival->steamId, player.workshopRival->versionDigits[0], player.workshopRival->versionDigits[1]);
             // Line
             if (player.workshopBuddy)
-                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopBuddy->steamId, player.workshopBuddy->versionDigits[0], player.workshopBuddy->versionDigits[1]);
+                result += fmt::format("1{}${: >3}{: >3}\r\n", player.workshopBuddy->steamId, player.workshopBuddy->versionDigits[0], player.workshopBuddy->versionDigits[1]);
             // Line
             if (player.workshopSkin)
-                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopSkin->steamId, player.workshopSkin->versionDigits[0], player.workshopSkin->versionDigits[1]);
+                result += fmt::format("1{}${: >3}{: >3}\r\n", player.workshopSkin->steamId, player.workshopSkin->versionDigits[0], player.workshopSkin->versionDigits[1]);
 
             // Line
             result += player.moveInstructions;
