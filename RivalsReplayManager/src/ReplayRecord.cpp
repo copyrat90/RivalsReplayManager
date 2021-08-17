@@ -14,7 +14,7 @@ namespace rrm
             {
                 if ((char32_t)*it == '$')
                     return true;
-            } while (((char32_t)*it++) == '\n');
+            } while (((char32_t)*it++) != '\n');
             return false;
         }
 
@@ -80,6 +80,7 @@ namespace rrm
         showScoresOnTop_ = ReadNum(it, 1) == 1;
         turbo_ = ReadNum(it, 1) == 1;
         devMode_ = ReadNum(it, 1) == 1;
+        abyss_ = (Abyss)ReadNum(it, 1);
         abyssEndlessNums_ = (int)ReadNum(it, 4);
         unknown_9_digits_ = ReadString(it, 9);
 
@@ -91,7 +92,6 @@ namespace rrm
             workshopStage_ = ReadWorkshopLine(it);
         }
 
-        // TODO: Read players and footer
         // Lines
         while (CheckPlayerLine(it))
         {
@@ -155,5 +155,92 @@ namespace rrm
         }
 
         unknownFooter_ = std::string(it.base(), serializedStr.end());
+
+        // {Name(32) + Description(140)} * {latin(1 byte) -> other(4 bytes)}
+        serializeStrMaxSize_ = (int)serializedStr.size() + (32 + 140) * 3;
+    }
+
+    std::string ReplayRecord::Serialize()
+    {
+        std::string result;
+        result.reserve(serializeStrMaxSize_);
+
+        // Line 1
+        result += std::to_string(starred_);
+        result += std::format("{}{}{:0>2}{:0>2}", version_.digits[0], version_.digits[1], version_.digits[2], version_.digits[3]);
+        result += std::format("{:0>2}{:0>2}{:0>2}{:0>2}{:0>2}{:0>4}", dateTime_.hour, dateTime_.minute, dateTime_.second, dateTime_.day, dateTime_.month, dateTime_.year);
+        result += name_;
+        result += std::string(32 - utf8::distance(name_.begin(), name_.end()), ' ');
+        result += description_;
+        result += std::string(140 - utf8::distance(description_.begin(), description_.end()), ' ');
+        result += unknown_3_digits_;
+        result += std::format("{:0>6}", gameLengthInFrames_);
+        result += std::to_string((int)matchType_);
+        result += unknown_10_digits_;
+        result += "\r\n";
+
+        // Line 2
+        result += std::to_string(aether_);
+        result += std::format("{:0>2}", (int)stage_);
+        result += std::format("{:0>2}", stocks_);
+        result += std::format("{:0>2}", timer_);
+        result += std::to_string(knockbackScale_);
+        result += std::to_string(team_);
+        result += std::to_string(teamAttack_);
+        result += std::to_string(showScoresOnTop_);
+        result += std::to_string(turbo_);
+        result += std::to_string(devMode_);
+        result += std::to_string((int)abyss_);
+        result += std::format("{:0>4}", abyssEndlessNums_);
+        result += unknown_9_digits_;
+        result += "\r\n";
+
+        // Line
+        if (workshopStage_)
+            result += std::format("1{}${: >3}{: >3}\r\n", workshopStage_->steamId, workshopStage_->versionDigits[0], workshopStage_->versionDigits[1]);
+
+        // Lines
+        for (const auto& player : players_)
+        {
+            // Line
+            result += (player.cpuLevel == -1) ? "H" : std::to_string(player.cpuLevel);
+            result += player.name;
+            result += std::string(32 - utf8::distance(player.name.begin(), player.name.end()), ' ');
+            result += player.tag;
+            result += std::string(6 - utf8::distance(player.tag.begin(), player.tag.end()), ' ');
+            result += player.unknown_1_digit;
+            result += std::format("{:0>2}", (int)player.rival);
+            result += std::format("{:0>2}{:0>2}", player.colorId, player.customColorId);
+            result += std::to_string(player.redTeam);
+            result += player.unknown_7_digits;
+            result += player.colorCode;
+            result += std::string(50 - utf8::distance(player.colorCode.begin(), player.colorCode.end()), ' ');
+            result += player.unknown_2_digits;
+            result += std::format("{:0>2}", (int)player.buddy);
+            result += std::to_string(player.useWorkshopSkin);
+            result += player.abyssRunes.to_string();
+            result += player.unknown_1_digit_2;
+            result += std::format("{: >2}", player.score);
+            result += player.unknown_8_digits;
+            result += "\r\n";
+
+            // Line
+            if (player.workshopRival)
+                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopRival->steamId, player.workshopRival->versionDigits[0], player.workshopRival->versionDigits[1]);
+            // Line
+            if (player.workshopBuddy)
+                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopBuddy->steamId, player.workshopBuddy->versionDigits[0], player.workshopBuddy->versionDigits[1]);
+            // Line
+            if (player.workshopSkin)
+                result += std::format("1{}${: >3}{: >3}\r\n", player.workshopSkin->steamId, player.workshopSkin->versionDigits[0], player.workshopSkin->versionDigits[1]);
+
+            // Line
+            result += player.moveInstructions;
+            result += "\r\n";
+        }
+
+        result += unknownFooter_;
+
+        return result;
     }
 }

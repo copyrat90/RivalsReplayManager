@@ -7,21 +7,28 @@
 
 int main()
 {
-    std::ifstream in("test.roa", std::ios::binary);
+    std::ifstream ifs("test.roa", std::ios::binary);
     std::string s;
 
-    if (in.is_open())
+    if (ifs.is_open())
     {
         std::ostringstream ss;
-        ss << in.rdbuf();
-        in.close();
+        ss << ifs.rdbuf();
+        ifs.close();
         s = ss.str();
 
         rrm::ReplayRecord replayRecord(s);
+        std::ofstream ofs("out.roa", std::ios::binary);
+        if (ofs.is_open())
+        {
+            ofs << replayRecord.Serialize();
+            ofs.close();
+        }
+        else
+            std::cout << "out.roa: file open failed!\n";
     }
     else
-        std::cout << "파일 없음!" << std::endl;
-
+        std::cout << "test.roa: file not found!\n";
 
     return 0;
 }

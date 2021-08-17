@@ -9,6 +9,8 @@
 
 namespace rrm
 {
+    /// @brief Stores replay file(`*.roa`) deserialized info.
+    /// Note that std::string contained in it are UTF-8 encoded, and doesn't contain any newline char.
     class ReplayRecord
     {
     public:
@@ -259,6 +261,7 @@ namespace rrm
         bool showScoresOnTop_;
         bool turbo_;
         bool devMode_;
+        Abyss abyss_;
         int abyssEndlessNums_;
         std::string unknown_9_digits_;
 
@@ -271,9 +274,17 @@ namespace rrm
         // unknown footer
         std::string unknownFooter_;
 
+        // Max size of string returned by this->Serialize()
+        int serializeStrMaxSize_;
+
     public:
         /// @brief Parse ReplayRecord from the `serializedStr`, which is read from the `*.roa` file and uses newline as CRLF(`\r\n`).
         /// @param serializedStr raw replay file(`*.roa`) string which contains newline as CRLF(`\r\n`)
         ReplayRecord(const std::string& serializedStr);
+
+        /// @brief Serialize ReplayRecord to std::string, so that it can be re-written to the `*.roa` file.
+        /// Uses CRLF(`\r\n`) as newline.
+        /// @return Serialized string ready to be written back to the `*.roa` file
+        [[nodiscard]] std::string Serialize();
     };
 }
